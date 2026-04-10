@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  ShieldAlert, Users, TrendingUp, Ship, Truck, Package, 
-  Activity, Award, AlertTriangle, BookOpen, RefreshCcw, 
+  ShieldAlert, Ship, Package, 
+  Activity, Award, AlertTriangle, RefreshCcw, 
   ArrowRight, Target, CheckCircle2, Link, Play, ChevronRight, Zap
 } from 'lucide-react';
 
@@ -53,7 +53,7 @@ if (typeof document !== 'undefined' && !document.getElementById('tailwind-cdn'))
 }
 
 // --- DYNAMIC BRANCHING SCENARIO ---
-/** @type {Object.<string, StoryNode>} */
+/** @type {Record<string, StoryNode>} */
 const STORY_NODES = {
   intro: {
     type: 'intro',
@@ -246,10 +246,11 @@ export default function CaseStudyApp() {
   const [matches, setMatches] = useState({ p1: '', p2: '', p3: '' });
   const [imgError, setImgError] = useState(false);
 
+  // Type safe Ref
   const gameBoardRef = useRef(null);
 
-  // Cast to avoid index errors
-  const currentStepData = STORY_NODES[currentNodeId];
+  // Safe access to nodes
+  const currentStepData = STORY_NODES[currentNodeId] || STORY_NODES.intro;
   const currentMonthNum = currentStepData?.month || 0;
 
   useEffect(() => {
@@ -258,11 +259,14 @@ export default function CaseStudyApp() {
 
   const scrollToBoard = () => {
     if (gameBoardRef.current) {
-      gameBoardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      (gameBoardRef.current).scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
-  /** @param {Impact} delta */
+  /** * @param {Impact} delta 
+   * @param {string} customMsg
+   * @param {string} nextNode
+   */
   const applyImpact = (delta, customMsg, nextNode) => {
     const newScores = {
       cult: Math.max(0, Math.min(100, scores.cult + delta.cult)),
@@ -308,9 +312,10 @@ export default function CaseStudyApp() {
     }
   };
 
+  /** @param {string} id */
   const toggleMultiSelect = (id) => {
     if (multiSelect.includes(id)) {
-      setMultiSelect(multiSelect.filter(i => i !== id));
+      setMultiSelect(multiSelect.filter((i) => i !== id));
     } else if (currentStepData?.limit && multiSelect.length < currentStepData.limit) {
       setMultiSelect([...multiSelect, id]);
     }
@@ -318,7 +323,7 @@ export default function CaseStudyApp() {
 
   const submitMultiSelect = () => {
     let dCult = 0, dOps = 0, dTrust = 0;
-    currentStepData?.options?.forEach(opt => {
+    currentStepData?.options?.forEach((opt) => {
       if (opt.id && multiSelect.includes(opt.id)) {
         dCult += opt.cult || 0; dOps += opt.ops || 0; dTrust += opt.trust || 0;
       }
@@ -345,21 +350,24 @@ export default function CaseStudyApp() {
     applyImpact({ cult: dCult, ops: dOps, trust: dTrust }, msg, next);
   };
 
+  /** * @param {string} problemId
+   * @param {string} answerId
+   */
   const handleMatchSelect = (problemId, answerId) => {
     const newMatches = { ...matches };
     for (const key in newMatches) {
-      if (newMatches[key] === answerId) newMatches[key] = '';
+      if ((newMatches as any)[key] === answerId) (newMatches as any)[key] = '';
     }
-    newMatches[problemId] = answerId;
+    (newMatches as any)[problemId] = answerId;
     setMatches(newMatches);
   };
 
   const submitMatching = () => {
     let correctCount = 0;
     if (currentStepData?.correctMatch) {
-      if (matches.p1 === currentStepData.correctMatch.p1) correctCount++;
-      if (matches.p2 === currentStepData.correctMatch.p2) correctCount++;
-      if (matches.p3 === currentStepData.correctMatch.p3) correctCount++;
+      if (matches.p1 === (currentStepData.correctMatch as any).p1) correctCount++;
+      if (matches.p2 === (currentStepData.correctMatch as any).p2) correctCount++;
+      if (matches.p3 === (currentStepData.correctMatch as any).p3) correctCount++;
     }
 
     const delta = { cult: correctCount * 10 - 10, ops: correctCount * 5 - 5, trust: correctCount * 10 - 10 };
@@ -372,10 +380,11 @@ export default function CaseStudyApp() {
     applyImpact(delta, msg, next);
   };
 
-  const RadarChart = ({ data }) => {
+  /** @param {{ data: Impact }} props */
+  const RadarChart = ({ data }: { data: any }) => {
     const radius = 60;
     const center = 100;
-    const getPos = (val, angleDeg) => {
+    const getPos = (val: number, angleDeg: number) => {
       const angleRad = (angleDeg - 90) * (Math.PI / 180);
       const r = (val / 100) * radius;
       return `${center + r * Math.cos(angleRad)},${center + r * Math.sin(angleRad)}`;
@@ -422,10 +431,7 @@ export default function CaseStudyApp() {
     return (
       <div className="bg-white border-b border-slate-100 pt-6 pb-12 relative z-10 flex flex-col justify-center overflow-hidden">
         <div className="flex justify-between items-center relative w-full max-w-2xl mx-auto px-10">
-          {/* Base Track Line */}
           <div className="absolute top-1/2 left-[10%] right-[10%] h-[2px] bg-slate-100 -translate-y-1/2 z-0"></div>
-          
-          {/* Active Progress Line (Animated) */}
           <div 
             className="absolute top-1/2 left-[10%] h-[2px] bg-blue-600 -translate-y-1/2 z-0 transition-all duration-1000 ease-in-out"
             style={{ width: `${(currentMonthNum > 0 ? currentMonthNum - 1 : 0) * 20}%` }}
@@ -486,7 +492,6 @@ export default function CaseStudyApp() {
       </div>
 
       <div className="relative z-10 w-full max-w-6xl flex flex-col md:flex-row gap-5 md:gap-6">
-        {/* --- MOBILE HEADER ONLY --- */}
         <div className="md:hidden bg-blue-950 p-4 rounded-2xl shadow-lg border border-blue-900 text-white flex items-center justify-between z-20">
           <div className="flex items-center gap-3">
              <div className="bg-blue-900/50 p-2 rounded-lg">
@@ -504,7 +509,6 @@ export default function CaseStudyApp() {
           )}
         </div>
 
-        {/* --- LEFT COLUMN --- */}
         <div className="w-full md:w-1/3 flex flex-col gap-5 md:gap-6 order-last md:order-first">
           <div className="hidden md:block bg-blue-950 p-6 rounded-3xl shadow-xl border border-blue-900 text-white relative overflow-hidden group hover:shadow-2xl transition-all duration-500">
             <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
@@ -530,7 +534,6 @@ export default function CaseStudyApp() {
           )}
         </div>
 
-        {/* --- RIGHT COLUMN --- */}
         <div className="w-full md:w-2/3 order-first md:order-last">
           <div 
             ref={gameBoardRef} 
@@ -717,11 +720,11 @@ export default function CaseStudyApp() {
                                   <span className={`w-2 h-2 md:w-3 md:h-3 rounded-full mt-1 md:mt-0 flex-shrink-0 ${slider.color}`}></span>
                                   {slider.label}
                                 </span>
-                                <span className="text-blue-900 font-mono font-extrabold bg-blue-50 px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-blue-100 flex-shrink-0 text-sm md:text-lg">{allocations[slider.id as keyof typeof allocations]}%</span>
+                                <span className="text-blue-900 font-mono font-extrabold bg-blue-50 px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-blue-100 flex-shrink-0 text-sm md:text-lg">{(allocations as any)[slider.id]}%</span>
                               </div>
                               <input 
                                 type="range" min="0" max="100" 
-                                value={allocations[slider.id as keyof typeof allocations]}
+                                value={(allocations as any)[slider.id]}
                                 onChange={(e) => {
                                   const val = parseInt(e.target.value);
                                   setAllocations({ ...allocations, [slider.id]: val });
@@ -751,8 +754,8 @@ export default function CaseStudyApp() {
                                 {item.label}
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
-                                {currentStepData.answers?.map(ans => {
-                                  const isSelectedHere = matches[item.id as keyof typeof matches] === ans.id;
+                                {currentStepData.answers?.map((ans) => {
+                                  const isSelectedHere = (matches as any)[item.id] === ans.id;
                                   const isSelectedElsewhere = Object.values(matches).includes(ans.id) && !isSelectedHere;
                                   return (
                                     <button
@@ -819,7 +822,6 @@ export default function CaseStudyApp() {
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
-        @keyframes floatSmall { 0% { transform: translateY(-50%) translateX(0px); } 50% { transform: translateY(-65%) translateX(0px); } 100% { transform: translateY(-50%) translateX(0px); } }
         @keyframes blob { 0% { transform: translate(0px, 0px) scale(1); } 33% { transform: translate(20px, -30px) scale(1.1); } 66% { transform: translate(-10px, 10px) scale(0.9); } 100% { transform: translate(0px, 0px) scale(1); } }
         @keyframes gradientBg { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         @keyframes imageZoom { 0% { transform: scale(1.1); } 100% { transform: scale(1); } }
@@ -829,7 +831,6 @@ export default function CaseStudyApp() {
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
         .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
         .animate-float { animation: float 3s ease-in-out infinite; }
-        .animate-float-small { animation: floatSmall 2s ease-in-out infinite; }
         .animate-pulse-soft { animation: pulseSoft 3.5s ease-in-out infinite; }
         .animate-blob { animation: blob 8s infinite; }
         .animation-delay-2000 { animation-delay: 2s; }
@@ -840,26 +841,11 @@ export default function CaseStudyApp() {
         
         input[type=range]::-webkit-slider-thumb {
           -webkit-appearance: none;
-          height: 24px;
-          width: 24px;
-          border-radius: 50%;
-          background: #1e3a8a;
-          cursor: pointer;
-          margin-top: -8px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-          border: 2px solid white;
+          height: 24px; width: 24px; border-radius: 50%; background: #1e3a8a; cursor: pointer; margin-top: -8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 2px solid white;
         }
-        @media (min-width: 768px) {
-          input[type=range]::-webkit-slider-thumb {
-            height: 28px; width: 28px; margin-top: -8px; border-width: 3px;
-          }
-        }
-        input[type=range]::-webkit-slider-runnable-track {
-          width: 100%; height: 8px; cursor: pointer; background: #cbd5e1; border-radius: 9999px;
-        }
-        @media (min-width: 768px) {
-          input[type=range]::-webkit-slider-runnable-track { height: 12px; }
-        }
+        @media (min-width: 768px) { input[type=range]::-webkit-slider-thumb { height: 28px; width: 28px; margin-top: -8px; border-width: 3px; } }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #cbd5e1; border-radius: 9999px; }
+        @media (min-width: 768px) { input[type=range]::-webkit-slider-runnable-track { height: 12px; } }
       `}} />
     </div>
   );
