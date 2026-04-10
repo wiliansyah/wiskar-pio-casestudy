@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { 
   ShieldAlert, Ship, Package, 
   Activity, Award, AlertTriangle, RefreshCcw, 
@@ -34,7 +34,7 @@ interface StoryNode {
   nextNode?: string;
   options?: StoryOption[];
   limit?: number;
-  evaluateNext?: (allocations?: any) => string;
+  evaluateNext?: (allocations: Record<string, number>) => string;
   sliders?: { id: string; label: string; key: string; color: string }[];
   items?: { id: string; label: string }[];
   answers?: { id: string; label: string }[];
@@ -255,7 +255,7 @@ export default function CaseStudyApp() {
 
   const scrollToBoard = () => {
     if (gameBoardRef.current) {
-      (gameBoardRef.current as HTMLDivElement).scrollIntoView({ behavior: 'smooth', block: 'start' });
+      gameBoardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
@@ -321,9 +321,9 @@ export default function CaseStudyApp() {
     const isPositive = dTrust >= 0;
     const msg = isPositive 
       ? "Luar biasa! Pilihan Anda berbasis data & sangat manusiawi. Tingkat adopsi aplikasi perlahan naik menembus 80% karena karyawan merasa didampingi."
-      : "Wah, tindakan Anda cukup agresif! Penggunaan aplikasi melonjak 95% secara instan, tapi kerugian rekrutmen diprediksi naik karena banyak staf mogok diam-diam.";
+      : "Wah, tindakan Anda cukup agresif! Penggunaan aplikasi melonjak 95% secara instan, tapi kerugian rekrutmen diprediksi naik karena banyak staf mau mogok diam-diam.";
     
-    const next = currentStepData?.evaluateNext ? currentStepData.evaluateNext() : "";
+    const next = currentStepData?.evaluateNext ? currentStepData.evaluateNext(allocations) : "";
     applyImpact({ cult: dCult, ops: dOps, trust: dTrust }, msg, next);
   };
 
@@ -332,9 +332,9 @@ export default function CaseStudyApp() {
     const dOps = Math.floor((allocations.s2 - 33) * 0.6) + Math.floor((allocations.s1 - 33) * 0.2);
     const dTrust = Math.floor((allocations.s3 - 33) * 0.5) + Math.floor((allocations.s1 - 33) * 0.3) - Math.floor((allocations.s2 - 33) * 0.4);
     let msg = "";
-    if (allocations.s2 > 50) msg = "Dampak: Denda ditekan hingga 0%, tapi orang jadi sibuk cari alasan biar nggak disalahkan. Kerjasama tim malah makin hancur karena takut denda.";
+    if (allocations.s2 > 50) msg = "Dampak: Denda ditekan hingga 0%, tapi orang jadi sibuk cari alasan biar tidak disalahkan. Kerjasama tim malah makin hancur karena takut denda.";
     else if (allocations.s3 > 50) msg = "Dampak: Kepuasan kerja menyentuh 90%. Tapi awas, mereka mulai santai, ngobrol terus, dan mengabaikan target pengiriman harian perusahaan.";
-    else msg = "Dampak: Pengaturan anggaran yang mantap! Program tukar nasib 2 hari sukses bikin tim Sales sadar bahwa gudang sudah kepanasan dan overcapacity.";
+    else msg = "Dampak: Pengaturan anggaran yang mantap! Program tukar nasib 2 hari sukses membuat tim Sales sadar bahwa gudang sudah kepanasan dan overcapacity.";
     
     const next = currentStepData?.evaluateNext ? currentStepData.evaluateNext(allocations) : "";
     applyImpact({ cult: dCult, ops: dOps, trust: dTrust }, msg, next);
@@ -364,7 +364,7 @@ export default function CaseStudyApp() {
     else if (correctCount > 0) msg = "Akurasi 33-66%. Ada beberapa yang benar. Tapi hati-hati, manajer yang dapat penugasan salah malah membuat performa divisinya turun 10%.";
     else msg = "Akurasi 0%! Memberikan intervensi yang tidak nyambung dengan masalah mereka membuat perusahaan rugi biaya training puluhan juta tanpa ada perubahan nyata.";
 
-    const next = currentStepData?.evaluateNext ? currentStepData.evaluateNext() : "";
+    const next = currentStepData?.evaluateNext ? currentStepData.evaluateNext(allocations) : "";
     applyImpact(delta, msg, next);
   };
 
