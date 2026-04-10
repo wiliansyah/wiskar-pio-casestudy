@@ -9,8 +9,11 @@ import {
 if (typeof document !== 'undefined' && !document.getElementById('tailwind-cdn')) {
   const script = document.createElement('script');
   script.id = 'tailwind-cdn';
-  script.src = 'https://cdn.tailwindcss.com';
-  document.head.appendChild(script);
+  script.src = 'https://tailwindui.com/css/tailwind.css'; // Using standard Tailwind
+  const scriptTag = document.createElement('script');
+  scriptTag.id = 'tailwind-cdn';
+  scriptTag.src = 'https://cdn.tailwindcss.com';
+  document.head.appendChild(scriptTag);
 }
 
 // --- DYNAMIC BRANCHING SCENARIO: LIGHT TONE + DATA & NUMBERS ---
@@ -196,6 +199,7 @@ export default function CaseStudyApp() {
   const [feedbackMsg, setFeedbackMsg] = useState("");
   const [impactDelta, setImpactDelta] = useState({ cult: 0, ops: 0, trust: 0 });
   const [nextPendingNode, setNextPendingNode] = useState(null);
+  
   // Transition State
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionMsg, setTransitionMsg] = useState("");
@@ -232,7 +236,7 @@ export default function CaseStudyApp() {
     setFeedbackMsg(customMsg);
     setNextPendingNode(nextNode);
     setShowFeedback(true);
-    setTimeout(scrollToBoard, 50); // Auto-scroll to top of card on mobile
+    setTimeout(scrollToBoard, 50);
   };
 
   const handleNextStep = () => {
@@ -342,7 +346,7 @@ export default function CaseStudyApp() {
         </svg>
         <div className="absolute -top-2 left-[50%] -translate-x-1/2 text-[9px] md:text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1 rounded">KEPERCAYAAN</div>
         <div className="absolute bottom-2 -right-4 text-[9px] md:text-[10px] font-bold text-blue-700 bg-blue-50 px-1 rounded">BUDAYA</div>
-        <div className="absolute bottom-2 -left-4 text-[9px] font-bold text-orange-700 bg-orange-50 px-1 rounded">OPERASIONAL</div>
+        <div className="absolute bottom-2 -left-4 text-[9px] md:text-[10px] font-bold text-orange-700 bg-orange-50 px-1 rounded">OPERASIONAL</div>
       </div>
     );
   };
@@ -357,41 +361,69 @@ export default function CaseStudyApp() {
     return { title: "HR Taktis: Penyelamat Standar", grade: "B", desc: "Angka operasional cukup stabil di kisaran 75% dan turnover ditahan di angka 15%. Belum memuaskan 100%, tapi kerja keras Anda meredam krisis patut diapresiasi oleh manajemen!", color: "text-blue-700", bg: "bg-blue-50 border-blue-200" };
   };
 
+  // --- COMPONENT: PROGRESS TIMELINE (SLEEK REDESIGN) ---
   const ProgressTimeline = () => {
     return (
-      <div className="bg-blue-50 border-b border-blue-100 pt-8 pb-10 md:pt-10 md:pb-12 relative z-10 flex flex-col justify-center shadow-inner overflow-hidden">
-        <div className="flex justify-between items-center relative w-full max-w-2xl mx-auto mt-6">
-          {/* Connecting Line */}
-          <div className="absolute top-1/2 left-[5%] right-[5%] h-1 bg-blue-200 -translate-y-1/2 z-0 rounded-full"></div>
-          {/* Active Line Progress */}
+      <div className="bg-white border-b border-slate-100 pt-6 pb-12 relative z-10 flex flex-col justify-center overflow-hidden">
+        <div className="flex justify-between items-center relative w-full max-w-2xl mx-auto px-10">
+          {/* Base Track Line */}
+          <div className="absolute top-1/2 left-[10%] right-[10%] h-[2px] bg-slate-100 -translate-y-1/2 z-0"></div>
+          
+          {/* Active Progress Line (Animated) */}
           <div 
-            className="absolute top-1/2 left-[5%] h-1 bg-blue-700 -translate-y-1/2 z-0 rounded-full transition-all duration-1000 ease-in-out"
-            style={{ width: `${(currentMonthNum > 0 ? currentMonthNum - 1 : 0) * 22.5}%` }}
+            className="absolute top-1/2 left-[10%] h-[2px] bg-blue-600 -translate-y-1/2 z-0 transition-all duration-1000 ease-in-out"
+            style={{ width: `${(currentMonthNum > 0 ? currentMonthNum - 1 : 0) * 20}%` }}
           ></div>
 
-          {/* Dots / Ports */}
+          {/* Points along the timeline */}
           {[1, 2, 3, 4, 5].map((month) => {
             const isActive = currentMonthNum === month;
             const isPast = currentMonthNum > month;
+            
             return (
-              <div key={month} className="relative z-10 flex flex-col items-center px-1">
-                <div className={`w-3 h-3 md:w-4 md:h-4 rounded-full border-2 transition-all duration-500 ${isActive ? 'bg-blue-600 border-white scale-150 shadow-md' : isPast ? 'bg-blue-600 border-blue-600' : 'bg-white border-blue-300'}`}></div>
-                <span className={`text-[8px] md:text-[10px] uppercase font-bold mt-2 md:mt-3 absolute top-3 md:top-4 whitespace-nowrap ${isActive ? 'text-blue-800' : 'text-slate-400'}`}>Bln {month}</span>
+              <div key={month} className="relative z-10 flex flex-col items-center group">
+                {/* sleek indicator */}
+                <div className="relative flex items-center justify-center transition-all duration-500">
+                  {/* Outer pulse/glow for active */}
+                  {isActive && (
+                    <div className="absolute w-8 h-8 rounded-full bg-blue-100/50 animate-ping opacity-75"></div>
+                  )}
+                  
+                  {/* The actual dot */}
+                  <div className={`
+                    w-4 h-4 rounded-full border-2 transition-all duration-700 z-10
+                    ${isActive 
+                      ? 'bg-white border-blue-600 scale-125 shadow-[0_0_15px_rgba(37,99,235,0.4)]' 
+                      : isPast 
+                        ? 'bg-blue-600 border-blue-600' 
+                        : 'bg-white border-slate-200'}
+                  `}>
+                    {/* Tiny center for active dot */}
+                    {isActive && (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* label */}
+                <div className="absolute top-8 flex flex-col items-center">
+                  <span className={`
+                    text-[9px] md:text-[10px] font-black tracking-[0.15em] uppercase transition-colors duration-500
+                    ${isActive ? 'text-blue-600' : isPast ? 'text-slate-600' : 'text-slate-300'}
+                  `}>
+                    Bln {month}
+                  </span>
+                  
+                  {/* active underline indicator */}
+                  {isActive && (
+                    <div className="w-4 h-[2px] bg-blue-600 mt-1 rounded-full animate-pulse-soft"></div>
+                  )}
+                </div>
               </div>
             );
           })}
-
-          {/* The Moving Ship Icon - POSITION UPDATED: floated higher and with shadow */}
-          <div 
-            className="absolute top-1/2 -translate-y-1/2 z-20 text-blue-900 transition-all duration-1000 ease-in-out drop-shadow-xl animate-float-ship"
-            style={{ 
-              left: `calc(5% + ${(currentMonthNum > 0 ? currentMonthNum - 1 : 0) * 22.5}% - 14px)`,
-              opacity: currentMonthNum > 0 ? 1 : 0,
-              marginTop: '-30px' // Lifted higher away from the line
-            }}
-          >
-            <Ship size={28} className="md:w-8 md:h-8" fill="rgba(30, 58, 138, 0.1)" strokeWidth={2} />
-          </div>
         </div>
       </div>
     );
@@ -423,7 +455,7 @@ export default function CaseStudyApp() {
           )}
         </div>
 
-        {/* --- LEFT COLUMN (Metrics on Desktop, Bottom on Mobile) --- */}
+        {/* --- LEFT COLUMN --- */}
         <div className="w-full md:w-1/3 flex flex-col gap-5 md:gap-6 order-last md:order-first">
           {/* Desktop Header */}
           <div className="hidden md:block bg-blue-950 p-6 rounded-3xl shadow-xl border border-blue-900 text-white relative overflow-hidden group hover:shadow-2xl transition-all duration-500">
@@ -451,7 +483,7 @@ export default function CaseStudyApp() {
           )}
         </div>
 
-        {/* --- RIGHT COLUMN (Main Game Area) --- */}
+        {/* --- RIGHT COLUMN --- */}
         <div className="w-full md:w-2/3 order-first md:order-last">
           <div 
             ref={gameBoardRef} 
@@ -459,7 +491,7 @@ export default function CaseStudyApp() {
           >
             <div className="h-1.5 md:h-2 bg-gradient-to-r from-blue-900 via-blue-600 to-emerald-500 flex-shrink-0" />
 
-            {/* Timeline */}
+            {/* Redesigned Sleek Timeline */}
             {currentMonthNum > 0 && currentNodeId !== 'ending' && <ProgressTimeline />}
 
             {/* Transition Overlay */}
@@ -567,7 +599,6 @@ export default function CaseStudyApp() {
                   </p>
 
                   <div className="flex-1 animate-slide-up" style={{animationDelay: '0.2s'}}>
-                    {/* SINGLE CHOICE */}
                     {currentStepData.type === 'single' && (
                       <div className="space-y-3 md:space-y-4">
                         {currentStepData.options.map((opt, idx) => (
@@ -585,7 +616,6 @@ export default function CaseStudyApp() {
                       </div>
                     )}
 
-                    {/* MULTI SELECT */}
                     {currentStepData.type === 'multi_select' && (
                       <div>
                         <div className="flex flex-wrap md:flex-nowrap justify-between items-center gap-2 mb-4 md:mb-6 bg-slate-50 p-3 md:p-4 rounded-xl border border-slate-200">
@@ -627,7 +657,6 @@ export default function CaseStudyApp() {
                       </div>
                     )}
 
-                    {/* ALLOCATION */}
                     {currentStepData.type === 'allocation' && (
                       <div>
                         <div className="mb-6 md:mb-8 p-4 md:p-6 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner">
@@ -672,7 +701,6 @@ export default function CaseStudyApp() {
                       </div>
                     )}
 
-                    {/* MATCHING */}
                     {currentStepData.type === 'matching' && (
                       <div>
                         <div className="space-y-4 md:space-y-6 mb-6 md:mb-8">
@@ -752,8 +780,7 @@ export default function CaseStudyApp() {
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
         @keyframes floatSmall { 0% { transform: translateY(-50%) translateX(0px); } 50% { transform: translateY(-65%) translateX(0px); } 100% { transform: translateY(-50%) translateX(0px); } }
-        @keyframes floatShip { 0% { transform: translateY(-3px); } 50% { transform: translateY(3px); } 100% { transform: translateY(-3px); } }
-        @keyframes pulseSoft { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
+        @keyframes pulseSoft { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
         @keyframes blob { 0% { transform: translate(0px, 0px) scale(1); } 33% { transform: translate(20px, -30px) scale(1.1); } 66% { transform: translate(-10px, 10px) scale(0.9); } 100% { transform: translate(0px, 0px) scale(1); } }
         @keyframes gradientBg { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         @keyframes imageZoom { 0% { transform: scale(1.1); } 100% { transform: scale(1); } }
@@ -764,8 +791,7 @@ export default function CaseStudyApp() {
         .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
         .animate-float { animation: float 3s ease-in-out infinite; }
         .animate-float-small { animation: floatSmall 2s ease-in-out infinite; }
-        .animate-float-ship { animation: floatShip 3s ease-in-out infinite; }
-        .animate-pulse-soft { animation: pulseSoft 4s ease-in-out infinite; }
+        .animate-pulse-soft { animation: pulseSoft 3s ease-in-out infinite; }
         .animate-blob { animation: blob 8s infinite; }
         .animation-delay-2000 { animation-delay: 2s; }
         .animate-gradient-bg { background-size: 200% 200%; animation: gradientBg 10s ease infinite; }
