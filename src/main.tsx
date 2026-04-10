@@ -1,10 +1,11 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './App.jsx';
-import './index.css';
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import App from './App.tsx' // Sesuaikan jika path/nama file Anda berbeda
+import './index.css' // Sesuaikan dengan file CSS Anda
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+// Tanda seru (!) di bawah ini memaksa TypeScript yakin bahwa elemen root itu ada
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
     <App />
-  </React.StrictMode>
-);
+  </StrictMode>,
+)
