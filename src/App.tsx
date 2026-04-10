@@ -53,7 +53,7 @@ if (typeof document !== 'undefined' && !document.getElementById('tailwind-cdn'))
 const STORY_NODES: Record<string, StoryNode> = {
   intro: {
     type: 'intro',
-    title: "Nusantara Logistics: Menyelamatkan Kapal Oleng",
+    title: "Nusantara Logistics: Menuju Stabilitas Strategis",
     image: "https://images.unsplash.com/photo-1580674285054-bed31e145f59?auto=format&fit=crop&w=1000&q=80",
     icon: Ship,
     context: "Simulasi Role-Play L&D",
