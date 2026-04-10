@@ -2,10 +2,49 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   ShieldAlert, Users, TrendingUp, Ship, Truck, Package, 
   Activity, Award, AlertTriangle, BookOpen, RefreshCcw, 
-  ArrowRight, Target, CheckCircle2, Link, Play, ChevronRight, Zap, Map
+  ArrowRight, Target, CheckCircle2, Link, Play, ChevronRight, Zap
 } from 'lucide-react';
 
-// --- AUTO INJECT TAILWIND CSS (GLOBAL LEVEL FOR BOLT.NEW/STACKBLITZ) ---
+// --- TYPE DEFINITIONS FOR STABILITY ---
+/**
+ * @typedef {Object} Impact
+ * @property {number} cult
+ * @property {number} ops
+ * @property {number} trust
+ */
+
+/**
+ * @typedef {Object} StoryOption
+ * @property {string} [id]
+ * @property {string} text
+ * @property {Impact} [impact]
+ * @property {number} [cult]
+ * @property {number} [ops]
+ * @property {number} [trust]
+ * @property {string} [feedback]
+ * @property {string} [nextNode]
+ */
+
+/**
+ * @typedef {Object} StoryNode
+ * @property {string} type
+ * @property {string} title
+ * @property {string} [image]
+ * @property {any} [icon]
+ * @property {string} [context]
+ * @property {string} situation
+ * @property {string} [nextNode]
+ * @property {number} [month]
+ * @property {StoryOption[]} [options]
+ * @property {number} [limit]
+ * @property {Function} [evaluateNext]
+ * @property {any[]} [sliders]
+ * @property {any[]} [items]
+ * @property {any[]} [answers]
+ * @property {Object} [correctMatch]
+ */
+
+// --- AUTO INJECT TAILWIND CSS ---
 if (typeof document !== 'undefined' && !document.getElementById('tailwind-cdn')) {
   const script = document.createElement('script');
   script.id = 'tailwind-cdn';
@@ -13,7 +52,8 @@ if (typeof document !== 'undefined' && !document.getElementById('tailwind-cdn'))
   document.head.appendChild(script);
 }
 
-// --- DYNAMIC BRANCHING SCENARIO: LIGHT TONE + DATA & NUMBERS ---
+// --- DYNAMIC BRANCHING SCENARIO ---
+/** @type {Object.<string, StoryNode>} */
 const STORY_NODES = {
   intro: {
     type: 'intro',
@@ -195,7 +235,7 @@ export default function CaseStudyApp() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState("");
   const [impactDelta, setImpactDelta] = useState({ cult: 0, ops: 0, trust: 0 });
-  const [nextPendingNode, setNextPendingNode] = useState(null);
+  const [nextPendingNode, setNextPendingNode] = useState("");
   
   // Transition State
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -208,8 +248,9 @@ export default function CaseStudyApp() {
 
   const gameBoardRef = useRef(null);
 
-  const currentStepData = STORY_NODES[currentNodeId] || {};
-  const currentMonthNum = currentStepData.month || 0;
+  // Cast to avoid index errors
+  const currentStepData = STORY_NODES[currentNodeId];
+  const currentMonthNum = currentStepData?.month || 0;
 
   useEffect(() => {
     setImgError(false);
@@ -221,6 +262,7 @@ export default function CaseStudyApp() {
     }
   };
 
+  /** @param {Impact} delta */
   const applyImpact = (delta, customMsg, nextNode) => {
     const newScores = {
       cult: Math.max(0, Math.min(100, scores.cult + delta.cult)),
@@ -231,20 +273,22 @@ export default function CaseStudyApp() {
     setHistory([...history, newScores]);
     setImpactDelta(delta);
     setFeedbackMsg(customMsg);
-    setNextPendingNode(nextNode);
+    setNextPendingNode(nextNode || "");
     setShowFeedback(true);
     setTimeout(scrollToBoard, 50);
   };
 
   const handleNextStep = () => {
+    if (!nextPendingNode) return;
     setShowFeedback(false);
     setIsTransitioning(true);
     scrollToBoard();
+    
     const nextNodeData = STORY_NODES[nextPendingNode];
     if (nextPendingNode === 'ending') {
       setTransitionMsg("Mengevaluasi Hasil Kinerja 5 Bulan...");
     } else {
-      setTransitionMsg(`Waktu Berjalan... Memasuki Bulan Ke-${nextNodeData.month}`);
+      setTransitionMsg(`Waktu Berjalan... Memasuki Bulan Ke-${nextNodeData?.month || '?'}`);
     }
 
     setTimeout(() => {
@@ -257,30 +301,35 @@ export default function CaseStudyApp() {
     }, 2500); 
   };
 
+  /** @param {StoryOption} option */
   const handleSingleChoice = (option) => {
-    applyImpact(option.impact, option.feedback, option.nextNode);
+    if (option.impact) {
+      applyImpact(option.impact, option.feedback || "", option.nextNode || "");
+    }
   };
 
   const toggleMultiSelect = (id) => {
     if (multiSelect.includes(id)) {
       setMultiSelect(multiSelect.filter(i => i !== id));
-    } else if (multiSelect.length < currentStepData.limit) {
+    } else if (currentStepData?.limit && multiSelect.length < currentStepData.limit) {
       setMultiSelect([...multiSelect, id]);
     }
   };
 
   const submitMultiSelect = () => {
     let dCult = 0, dOps = 0, dTrust = 0;
-    currentStepData.options.forEach(opt => {
-      if (multiSelect.includes(opt.id)) {
-        dCult += opt.cult; dOps += opt.ops; dTrust += opt.trust;
+    currentStepData?.options?.forEach(opt => {
+      if (opt.id && multiSelect.includes(opt.id)) {
+        dCult += opt.cult || 0; dOps += opt.ops || 0; dTrust += opt.trust || 0;
       }
     });
     const isPositive = dTrust >= 0;
     const msg = isPositive 
       ? "Luar biasa! Pilihan Anda berbasis data & sangat manusiawi. Tingkat adopsi aplikasi perlahan naik menembus 80% karena karyawan merasa didampingi."
       : "Wah, tindakan Anda cukup agresif! Penggunaan aplikasi melonjak 95% secara instan, tapi kerugian rekrutmen diprediksi naik karena banyak staf mogok diam-diam.";
-    applyImpact({ cult: dCult, ops: dOps, trust: dTrust }, msg, currentStepData.evaluateNext());
+    
+    const next = currentStepData?.evaluateNext ? currentStepData.evaluateNext() : "";
+    applyImpact({ cult: dCult, ops: dOps, trust: dTrust }, msg, next);
   };
 
   const submitAllocation = () => {
@@ -291,7 +340,9 @@ export default function CaseStudyApp() {
     if (allocations.s2 > 50) msg = "Dampak: Denda ditekan hingga 0%, tapi orang jadi sibuk cari alasan biar nggak disalahkan. Kerjasama tim malah makin hancur karena takut denda.";
     else if (allocations.s3 > 50) msg = "Dampak: Kepuasan kerja menyentuh 90%. Tapi awas, mereka mulai santai, ngobrol terus, dan mengabaikan target pengiriman harian perusahaan.";
     else msg = "Dampak: Pengaturan anggaran yang mantap! Program tukar nasib 2 hari sukses bikin tim Sales sadar bahwa gudang sudah kepanasan dan overcapacity.";
-    applyImpact({ cult: dCult, ops: dOps, trust: dTrust }, msg, currentStepData.evaluateNext(allocations));
+    
+    const next = currentStepData?.evaluateNext ? currentStepData.evaluateNext(allocations) : "";
+    applyImpact({ cult: dCult, ops: dOps, trust: dTrust }, msg, next);
   };
 
   const handleMatchSelect = (problemId, answerId) => {
@@ -305,9 +356,11 @@ export default function CaseStudyApp() {
 
   const submitMatching = () => {
     let correctCount = 0;
-    if (matches.p1 === currentStepData.correctMatch.p1) correctCount++;
-    if (matches.p2 === currentStepData.correctMatch.p2) correctCount++;
-    if (matches.p3 === currentStepData.correctMatch.p3) correctCount++;
+    if (currentStepData?.correctMatch) {
+      if (matches.p1 === currentStepData.correctMatch.p1) correctCount++;
+      if (matches.p2 === currentStepData.correctMatch.p2) correctCount++;
+      if (matches.p3 === currentStepData.correctMatch.p3) correctCount++;
+    }
 
     const delta = { cult: correctCount * 10 - 10, ops: correctCount * 5 - 5, trust: correctCount * 10 - 10 };
     let msg = "";
@@ -315,7 +368,8 @@ export default function CaseStudyApp() {
     else if (correctCount > 0) msg = "Akurasi 33-66%. Ada beberapa yang benar. Tapi hati-hati, manajer yang dapat penugasan salah malah membuat performa divisinya turun 10%.";
     else msg = "Akurasi 0%! Memberikan intervensi yang tidak nyambung dengan masalah mereka membuat perusahaan rugi biaya training puluhan juta tanpa ada perubahan nyata.";
 
-    applyImpact(delta, msg, currentStepData.evaluateNext());
+    const next = currentStepData?.evaluateNext ? currentStepData.evaluateNext() : "";
+    applyImpact(delta, msg, next);
   };
 
   const RadarChart = ({ data }) => {
@@ -339,7 +393,6 @@ export default function CaseStudyApp() {
           <line x1={center} y1={center} x2={center} y2={center - radius} stroke="#cbd5e1" />
           <line x1={center} y1={center} x2={center + radius * Math.cos(30 * Math.PI / 180)} y2={center + radius * Math.sin(30 * Math.PI / 180)} stroke="#cbd5e1" />
           <line x1={center} y1={center} x2={center - radius * Math.cos(30 * Math.PI / 180)} y2={center + radius * Math.sin(30 * Math.PI / 180)} stroke="#cbd5e1" />
-          {/* Transition-all di sini memastikan perubahan bentuk halus saat data diupdate, tanpa pulsing terus menerus */}
           <polygon 
             points={points} 
             fill="rgba(30, 58, 138, 0.25)" 
@@ -365,7 +418,6 @@ export default function CaseStudyApp() {
     return { title: "HR Taktis: Penyelamat Standar", grade: "B", desc: "Angka operasional cukup stabil di kisaran 75% dan turnover ditahan di angka 15%. Belum memuaskan 100%, tapi kerja keras Anda meredam krisis patut diapresiasi oleh manajemen!", color: "text-blue-700", bg: "bg-blue-50 border-blue-200" };
   };
 
-  // --- COMPONENT: PROGRESS TIMELINE (SLEEK REDESIGN) ---
   const ProgressTimeline = () => {
     return (
       <div className="bg-white border-b border-slate-100 pt-6 pb-12 relative z-10 flex flex-col justify-center overflow-hidden">
@@ -379,21 +431,17 @@ export default function CaseStudyApp() {
             style={{ width: `${(currentMonthNum > 0 ? currentMonthNum - 1 : 0) * 20}%` }}
           ></div>
 
-          {/* Points along the timeline */}
           {[1, 2, 3, 4, 5].map((month) => {
             const isActive = currentMonthNum === month;
             const isPast = currentMonthNum > month;
             
             return (
               <div key={month} className="relative z-10 flex flex-col items-center group">
-                {/* sleek indicator */}
                 <div className="relative flex items-center justify-center transition-all duration-500">
-                  {/* Outer pulse/glow for active */}
                   {isActive && (
                     <div className="absolute w-8 h-8 rounded-full bg-blue-100/50 animate-ping opacity-75"></div>
                   )}
                   
-                  {/* The actual dot */}
                   <div className={`
                     w-4 h-4 rounded-full border-2 transition-all duration-700 z-10
                     ${isActive 
@@ -402,7 +450,6 @@ export default function CaseStudyApp() {
                         ? 'bg-blue-600 border-blue-600' 
                         : 'bg-white border-slate-200'}
                   `}>
-                    {/* Tiny center for active dot */}
                     {isActive && (
                       <div className="w-full h-full flex items-center justify-center">
                         <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
@@ -411,7 +458,6 @@ export default function CaseStudyApp() {
                   </div>
                 </div>
 
-                {/* label */}
                 <div className="absolute top-8 flex flex-col items-center">
                   <span className={`
                     text-[9px] md:text-[10px] font-black tracking-[0.15em] uppercase transition-colors duration-500
@@ -420,7 +466,6 @@ export default function CaseStudyApp() {
                     Bln {month}
                   </span>
                   
-                  {/* active underline indicator */}
                   {isActive && (
                     <div className="w-4 h-[2px] bg-blue-600 mt-1 rounded-full animate-pulse-soft"></div>
                   )}
@@ -461,7 +506,6 @@ export default function CaseStudyApp() {
 
         {/* --- LEFT COLUMN --- */}
         <div className="w-full md:w-1/3 flex flex-col gap-5 md:gap-6 order-last md:order-first">
-          {/* Desktop Header */}
           <div className="hidden md:block bg-blue-950 p-6 rounded-3xl shadow-xl border border-blue-900 text-white relative overflow-hidden group hover:shadow-2xl transition-all duration-500">
             <div className="absolute -right-4 -top-4 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
               <ShieldAlert size={120} />
@@ -473,7 +517,6 @@ export default function CaseStudyApp() {
             <p className="text-xs text-blue-200 relative z-10 font-medium">Mini Game: Uji Keputusan HR Anda</p>
           </div>
 
-          {/* Metrics Radar Chart (Pulsing Animasi dihapus di sini) */}
           {currentNodeId !== 'intro' && currentNodeId !== 'ending' && (
             <div className="bg-white p-5 md:p-6 rounded-3xl shadow-lg border border-slate-200 flex flex-col items-center relative overflow-hidden">
               <h3 className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-widest mb-2 md:mb-4">Grafik Kinerja Anda</h3>
@@ -495,10 +538,8 @@ export default function CaseStudyApp() {
           >
             <div className="h-1.5 md:h-2 bg-gradient-to-r from-blue-900 via-blue-600 to-emerald-500 flex-shrink-0" />
 
-            {/* Redesigned Sleek Timeline */}
             {currentMonthNum > 0 && currentNodeId !== 'ending' && <ProgressTimeline />}
 
-            {/* Transition Overlay */}
             {isTransitioning && (
               <div className="absolute inset-0 z-50 bg-blue-950 flex flex-col items-center justify-center overflow-hidden animate-fade-in rounded-b-3xl">
                 <div className="absolute inset-0 opacity-20">
@@ -514,8 +555,7 @@ export default function CaseStudyApp() {
               </div>
             )}
 
-            {/* Scene Image */}
-            {currentStepData.image && currentNodeId !== 'ending' && !showFeedback && !isTransitioning && (
+            {currentStepData?.image && currentNodeId !== 'ending' && !showFeedback && !isTransitioning && (
                <div className="w-full h-40 md:h-64 relative flex-shrink-0 bg-slate-100 overflow-hidden">
                  {!imgError ? (
                    <img 
@@ -536,7 +576,6 @@ export default function CaseStudyApp() {
             )}
 
             <div className="px-5 md:px-10 pb-8 md:pb-10 flex-1 relative flex flex-col">
-              {/* --- STATE: INTRO --- */}
               {currentNodeId === 'intro' && !isTransitioning && (
                 <div className="text-center flex-1 flex flex-col justify-center mt-[-30px] md:mt-[-80px] relative z-10">
                   <div className="inline-block p-5 md:p-6 bg-white rounded-full text-blue-950 mb-4 md:mb-6 mx-auto border border-slate-200 shadow-xl animate-float">
@@ -549,7 +588,7 @@ export default function CaseStudyApp() {
                     {currentStepData.situation}
                   </p>
                   <button 
-                    onClick={() => setCurrentNodeId(currentStepData.nextNode)}
+                    onClick={() => setCurrentNodeId(currentStepData.nextNode || 'intro')}
                     className="px-6 md:px-8 py-4 md:py-5 bg-blue-950 hover:bg-blue-800 text-white font-bold rounded-2xl transition-all shadow-blue-900/30 shadow-xl flex items-center justify-center gap-3 w-full md:w-auto mx-auto text-base md:text-lg animate-slide-up active:scale-95"
                     style={{animationDelay: '0.3s'}}
                   >
@@ -558,7 +597,6 @@ export default function CaseStudyApp() {
                 </div>
               )}
 
-              {/* --- STATE: ENDING --- */}
               {currentNodeId === 'ending' && !isTransitioning && (
                 <div className="animate-fade-in py-6 md:py-10 flex-1 flex flex-col justify-center">
                   <div className="animate-float mx-auto mb-4 md:mb-6">
@@ -585,27 +623,26 @@ export default function CaseStudyApp() {
                 </div>
               )}
 
-              {/* --- STATE: QUESTIONS --- */}
               {currentNodeId !== 'intro' && currentNodeId !== 'ending' && !showFeedback && !isTransitioning && (
                 <div className="animate-fade-in mt-[-30px] md:mt-[-60px] relative z-10 flex-1 flex flex-col">
                   <div className="flex flex-col md:flex-row md:items-end gap-3 md:gap-5 mb-6 md:mb-8 pb-5 md:pb-6 border-b border-slate-200">
                     <div className="p-3 md:p-4 bg-white shadow-xl border border-slate-100 text-blue-900 rounded-2xl animate-float self-start" style={{animationDuration: '4s'}}>
-                      {currentStepData.icon && <currentStepData.icon size={32} className="md:w-10 md:h-10" strokeWidth={1.5} />}
+                      {currentStepData?.icon && <currentStepData.icon size={32} className="md:w-10 md:h-10" strokeWidth={1.5} />}
                     </div>
                     <div className="pb-1 animate-slide-up mt-2 md:mt-0">
-                      <span className="text-blue-700 text-[10px] md:text-xs font-bold uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-full border border-blue-100">{currentStepData.context}</span>
-                      <h2 className="text-xl md:text-3xl font-extrabold text-slate-900 mt-2 md:mt-3 leading-snug">{currentStepData.title}</h2>
+                      <span className="text-blue-700 text-[10px] md:text-xs font-bold uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-full border border-blue-100">{currentStepData?.context}</span>
+                      <h2 className="text-xl md:text-3xl font-extrabold text-slate-900 mt-2 md:mt-3 leading-snug">{currentStepData?.title}</h2>
                     </div>
                   </div>
 
                   <p className="text-slate-700 text-base md:text-xl leading-relaxed mb-8 md:mb-10 animate-slide-up" style={{animationDelay: '0.1s'}}>
-                    {currentStepData.situation}
+                    {currentStepData?.situation}
                   </p>
 
                   <div className="flex-1 animate-slide-up" style={{animationDelay: '0.2s'}}>
-                    {currentStepData.type === 'single' && (
+                    {currentStepData?.type === 'single' && (
                       <div className="space-y-3 md:space-y-4">
-                        {currentStepData.options.map((opt, idx) => (
+                        {currentStepData.options?.map((opt, idx) => (
                           <button
                             key={idx}
                             onClick={() => handleSingleChoice(opt)}
@@ -620,7 +657,7 @@ export default function CaseStudyApp() {
                       </div>
                     )}
 
-                    {currentStepData.type === 'multi_select' && (
+                    {currentStepData?.type === 'multi_select' && (
                       <div>
                         <div className="flex flex-wrap md:flex-nowrap justify-between items-center gap-2 mb-4 md:mb-6 bg-slate-50 p-3 md:p-4 rounded-xl border border-slate-200">
                           <span className="text-[11px] md:text-sm font-bold text-slate-600 uppercase tracking-wide">Pilih {currentStepData.limit} Tindakan:</span>
@@ -629,13 +666,13 @@ export default function CaseStudyApp() {
                           </span>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-6 md:mb-8">
-                          {currentStepData.options.map((opt) => {
-                            const isSelected = multiSelect.includes(opt.id);
-                            const isDisabled = !isSelected && multiSelect.length >= currentStepData.limit;
+                          {currentStepData.options?.map((opt) => {
+                            const isSelected = opt.id && multiSelect.includes(opt.id);
+                            const isDisabled = !isSelected && multiSelect.length >= (currentStepData.limit || 0);
                             return (
                               <button
                                 key={opt.id}
-                                onClick={() => toggleMultiSelect(opt.id)}
+                                onClick={() => opt.id && toggleMultiSelect(opt.id)}
                                 disabled={isDisabled}
                                 className={`p-4 md:p-5 rounded-2xl border-2 text-left flex items-start gap-3 md:gap-4 transition-all duration-200 ${
                                   isSelected ? 'bg-blue-50 border-blue-900 text-blue-950 shadow-sm' : 
@@ -661,7 +698,7 @@ export default function CaseStudyApp() {
                       </div>
                     )}
 
-                    {currentStepData.type === 'allocation' && (
+                    {currentStepData?.type === 'allocation' && (
                       <div>
                         <div className="mb-6 md:mb-8 p-4 md:p-6 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner">
                           <h4 className="text-center text-[10px] md:text-sm font-bold text-slate-500 uppercase tracking-widest mb-3 md:mb-4">Grafik 100% Anggaran</h4>
@@ -673,18 +710,18 @@ export default function CaseStudyApp() {
                         </div>
 
                         <div className="space-y-4 md:space-y-6 mb-6 md:mb-8">
-                          {currentStepData.sliders.map(slider => (
+                          {currentStepData.sliders?.map(slider => (
                             <div key={slider.id} className="bg-white p-4 md:p-6 rounded-2xl border border-slate-200 shadow-sm">
                               <div className="flex justify-between mb-3 md:mb-4 items-start md:items-center">
                                 <span className="text-xs md:text-base font-bold text-slate-700 pr-2 flex items-start md:items-center gap-2 leading-tight">
                                   <span className={`w-2 h-2 md:w-3 md:h-3 rounded-full mt-1 md:mt-0 flex-shrink-0 ${slider.color}`}></span>
                                   {slider.label}
                                 </span>
-                                <span className="text-blue-900 font-mono font-extrabold bg-blue-50 px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-blue-100 flex-shrink-0 text-sm md:text-lg">{allocations[slider.id]}%</span>
+                                <span className="text-blue-900 font-mono font-extrabold bg-blue-50 px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-blue-100 flex-shrink-0 text-sm md:text-lg">{allocations[slider.id as keyof typeof allocations]}%</span>
                               </div>
                               <input 
                                 type="range" min="0" max="100" 
-                                value={allocations[slider.id]}
+                                value={allocations[slider.id as keyof typeof allocations]}
                                 onChange={(e) => {
                                   const val = parseInt(e.target.value);
                                   setAllocations({ ...allocations, [slider.id]: val });
@@ -705,17 +742,17 @@ export default function CaseStudyApp() {
                       </div>
                     )}
 
-                    {currentStepData.type === 'matching' && (
+                    {currentStepData?.type === 'matching' && (
                       <div>
                         <div className="space-y-4 md:space-y-6 mb-6 md:mb-8">
-                          {currentStepData.items.map((item) => (
+                          {currentStepData.items?.map((item) => (
                             <div key={item.id} className="bg-white p-4 md:p-5 rounded-2xl border border-slate-200 shadow-sm">
                               <div className="text-xs md:text-base text-slate-800 bg-orange-50 p-3 md:p-4 rounded-xl border-l-4 border-orange-500 font-medium mb-3 md:mb-4 leading-snug">
                                 {item.label}
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
-                                {currentStepData.answers.map(ans => {
-                                  const isSelectedHere = matches[item.id] === ans.id;
+                                {currentStepData.answers?.map(ans => {
+                                  const isSelectedHere = matches[item.id as keyof typeof matches] === ans.id;
                                   const isSelectedElsewhere = Object.values(matches).includes(ans.id) && !isSelectedHere;
                                   return (
                                     <button
@@ -750,7 +787,6 @@ export default function CaseStudyApp() {
                 </div>
               )}
 
-              {/* --- FEEDBACK OVERLAY --- */}
               {showFeedback && !isTransitioning && (
                 <div className="absolute inset-0 z-20 bg-white/95 backdrop-blur-md p-5 md:p-10 flex flex-col justify-start md:justify-center items-center text-center animate-fade-in border-t-4 md:border-t-8 border-blue-950 rounded-b-3xl overflow-y-auto">
                   <div className="mt-8 md:mt-0 inline-block p-4 md:p-5 bg-blue-50 text-blue-900 rounded-full mb-4 md:mb-6 border border-blue-100 shadow-inner animate-float">
@@ -784,7 +820,6 @@ export default function CaseStudyApp() {
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
         @keyframes floatSmall { 0% { transform: translateY(-50%) translateX(0px); } 50% { transform: translateY(-65%) translateX(0px); } 100% { transform: translateY(-50%) translateX(0px); } }
-        @keyframes pulseSoft { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.03); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
         @keyframes blob { 0% { transform: translate(0px, 0px) scale(1); } 33% { transform: translate(20px, -30px) scale(1.1); } 66% { transform: translate(-10px, 10px) scale(0.9); } 100% { transform: translate(0px, 0px) scale(1); } }
         @keyframes gradientBg { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         @keyframes imageZoom { 0% { transform: scale(1.1); } 100% { transform: scale(1); } }
@@ -803,7 +838,6 @@ export default function CaseStudyApp() {
         .animate-sail { animation: sailAcross 2.5s ease-in-out forwards; left: 0; pointer-events: none; }
         .animate-wave { animation: waveMove 4s linear infinite; pointer-events: none; }
         
-        /* Mobile friendly slider thumb */
         input[type=range]::-webkit-slider-thumb {
           -webkit-appearance: none;
           height: 24px;
@@ -831,7 +865,7 @@ export default function CaseStudyApp() {
   );
 }
 
-const MetricBar = ({ label, value, color, text, bg, border }) => (
+const MetricBar = ({ label, value, color, text, bg, border }: any) => (
   <div className={`flex flex-col gap-1 p-2 md:p-3 rounded-xl border ${bg} ${border}`}>
     <div className="flex justify-between items-center text-[11px] md:text-sm font-bold">
       <span className={text}>{label}</span>
@@ -843,7 +877,7 @@ const MetricBar = ({ label, value, color, text, bg, border }) => (
   </div>
 );
 
-const StatPill = ({ label, delta, color, bg }) => {
+const StatPill = ({ label, delta, color, bg }: any) => {
   if (delta === 0) return null;
   const isPos = delta > 0;
   return (
