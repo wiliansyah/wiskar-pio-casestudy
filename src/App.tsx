@@ -5,44 +5,41 @@ import {
   ArrowRight, Target, CheckCircle2, Link, Play, ChevronRight, Zap
 } from 'lucide-react';
 
-// --- TYPE DEFINITIONS FOR STABILITY ---
-/**
- * @typedef {Object} Impact
- * @property {number} cult
- * @property {number} ops
- * @property {number} trust
- */
+// --- TYPE INTERFACES FOR STRICT ENVIRONMENTS ---
+interface Impact {
+  cult: number;
+  ops: number;
+  trust: number;
+}
 
-/**
- * @typedef {Object} StoryOption
- * @property {string} [id]
- * @property {string} text
- * @property {Impact} [impact]
- * @property {number} [cult]
- * @property {number} [ops]
- * @property {number} [trust]
- * @property {string} [feedback]
- * @property {string} [nextNode]
- */
+interface StoryOption {
+  id?: string;
+  text: string;
+  impact?: Impact;
+  cult?: number;
+  ops?: number;
+  trust?: number;
+  feedback?: string;
+  nextNode?: string;
+}
 
-/**
- * @typedef {Object} StoryNode
- * @property {string} type
- * @property {string} title
- * @property {string} [image]
- * @property {any} [icon]
- * @property {string} [context]
- * @property {string} situation
- * @property {string} [nextNode]
- * @property {number} [month]
- * @property {StoryOption[]} [options]
- * @property {number} [limit]
- * @property {Function} [evaluateNext]
- * @property {any[]} [sliders]
- * @property {any[]} [items]
- * @property {any[]} [answers]
- * @property {Object} [correctMatch]
- */
+interface StoryNode {
+  month?: number;
+  type: string;
+  title: string;
+  image?: string;
+  icon?: any;
+  context?: string;
+  situation: string;
+  nextNode?: string;
+  options?: StoryOption[];
+  limit?: number;
+  evaluateNext?: (allocations?: any) => string;
+  sliders?: { id: string; label: string; key: string; color: string }[];
+  items?: { id: string; label: string }[];
+  answers?: { id: string; label: string }[];
+  correctMatch?: Record<string, string>;
+}
 
 // --- AUTO INJECT TAILWIND CSS ---
 if (typeof document !== 'undefined' && !document.getElementById('tailwind-cdn')) {
@@ -53,8 +50,7 @@ if (typeof document !== 'undefined' && !document.getElementById('tailwind-cdn'))
 }
 
 // --- DYNAMIC BRANCHING SCENARIO ---
-/** @type {Record<string, StoryNode>} */
-const STORY_NODES = {
+const STORY_NODES: Record<string, StoryNode> = {
   intro: {
     type: 'intro',
     title: "Nusantara Logistics: Menyelamatkan Kapal Oleng",
@@ -134,7 +130,7 @@ const STORY_NODES = {
       { id: 's2', label: "Bikin aturan denda ketat Rp 1 Juta/kejadian jika janji meleset", key: 'ops', color: 'bg-orange-500' },
       { id: 's3', label: "Sewa Vila untuk Liburan (Outing) 3 hari 2 malam agar mereka akrab", key: 'trust', color: 'bg-blue-500' }
     ],
-    evaluateNext: (allocations) => {
+    evaluateNext: (allocations: Record<string, number>) => {
       if (allocations.s2 > 50) return 'm4_burnout'; 
       if (allocations.s3 > 50) return 'm4_complacent'; 
       return 'm4_balanced'; 
@@ -230,24 +226,24 @@ const STORY_NODES = {
 
 export default function CaseStudyApp() {
   const [currentNodeId, setCurrentNodeId] = useState('intro');
-  const [scores, setScores] = useState({ cult: 50, ops: 50, trust: 50 });
-  const [history, setHistory] = useState([{ cult: 50, ops: 50, trust: 50 }]);
+  const [scores, setScores] = useState<Impact>({ cult: 50, ops: 50, trust: 50 });
+  const [history, setHistory] = useState<Impact[]>([{ cult: 50, ops: 50, trust: 50 }]);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState("");
-  const [impactDelta, setImpactDelta] = useState({ cult: 0, ops: 0, trust: 0 });
+  const [impactDelta, setImpactDelta] = useState<Impact>({ cult: 0, ops: 0, trust: 0 });
   const [nextPendingNode, setNextPendingNode] = useState("");
   
   // Transition State
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionMsg, setTransitionMsg] = useState("");
 
-  const [multiSelect, setMultiSelect] = useState([]);
-  const [allocations, setAllocations] = useState({ s1: 34, s2: 33, s3: 33 });
-  const [matches, setMatches] = useState({ p1: '', p2: '', p3: '' });
+  const [multiSelect, setMultiSelect] = useState<string[]>([]);
+  const [allocations, setAllocations] = useState<Record<string, number>>({ s1: 34, s2: 33, s3: 33 });
+  const [matches, setMatches] = useState<Record<string, string>>({ p1: '', p2: '', p3: '' });
   const [imgError, setImgError] = useState(false);
 
   // Type safe Ref
-  const gameBoardRef = useRef(null);
+  const gameBoardRef = useRef<HTMLDivElement>(null);
 
   // Safe access to nodes
   const currentStepData = STORY_NODES[currentNodeId] || STORY_NODES.intro;
@@ -259,15 +255,11 @@ export default function CaseStudyApp() {
 
   const scrollToBoard = () => {
     if (gameBoardRef.current) {
-      (gameBoardRef.current).scrollIntoView({ behavior: 'smooth', block: 'start' });
+      (gameBoardRef.current as HTMLDivElement).scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
-  /** * @param {Impact} delta 
-   * @param {string} customMsg
-   * @param {string} nextNode
-   */
-  const applyImpact = (delta, customMsg, nextNode) => {
+  const applyImpact = (delta: Impact, customMsg: string, nextNode: string) => {
     const newScores = {
       cult: Math.max(0, Math.min(100, scores.cult + delta.cult)),
       ops: Math.max(0, Math.min(100, scores.ops + delta.ops)),
@@ -305,15 +297,13 @@ export default function CaseStudyApp() {
     }, 2500); 
   };
 
-  /** @param {StoryOption} option */
-  const handleSingleChoice = (option) => {
+  const handleSingleChoice = (option: StoryOption) => {
     if (option.impact) {
       applyImpact(option.impact, option.feedback || "", option.nextNode || "");
     }
   };
 
-  /** @param {string} id */
-  const toggleMultiSelect = (id) => {
+  const toggleMultiSelect = (id: string) => {
     if (multiSelect.includes(id)) {
       setMultiSelect(multiSelect.filter((i) => i !== id));
     } else if (currentStepData?.limit && multiSelect.length < currentStepData.limit) {
@@ -350,24 +340,22 @@ export default function CaseStudyApp() {
     applyImpact({ cult: dCult, ops: dOps, trust: dTrust }, msg, next);
   };
 
-  /** * @param {string} problemId
-   * @param {string} answerId
-   */
-  const handleMatchSelect = (problemId, answerId) => {
+  const handleMatchSelect = (problemId: string, answerId: string) => {
     const newMatches = { ...matches };
     for (const key in newMatches) {
-      if ((newMatches as any)[key] === answerId) (newMatches as any)[key] = '';
+      if (newMatches[key] === answerId) newMatches[key] = '';
     }
-    (newMatches as any)[problemId] = answerId;
+    newMatches[problemId] = answerId;
     setMatches(newMatches);
   };
 
   const submitMatching = () => {
     let correctCount = 0;
     if (currentStepData?.correctMatch) {
-      if (matches.p1 === (currentStepData.correctMatch as any).p1) correctCount++;
-      if (matches.p2 === (currentStepData.correctMatch as any).p2) correctCount++;
-      if (matches.p3 === (currentStepData.correctMatch as any).p3) correctCount++;
+      const targetMatch = currentStepData.correctMatch as Record<string, string>;
+      if (matches.p1 === targetMatch.p1) correctCount++;
+      if (matches.p2 === targetMatch.p2) correctCount++;
+      if (matches.p3 === targetMatch.p3) correctCount++;
     }
 
     const delta = { cult: correctCount * 10 - 10, ops: correctCount * 5 - 5, trust: correctCount * 10 - 10 };
@@ -380,8 +368,7 @@ export default function CaseStudyApp() {
     applyImpact(delta, msg, next);
   };
 
-  /** @param {{ data: Impact }} props */
-  const RadarChart = ({ data }: { data: any }) => {
+  const RadarChart = ({ data }: { data: Impact }) => {
     const radius = 60;
     const center = 100;
     const getPos = (val: number, angleDeg: number) => {
@@ -720,11 +707,11 @@ export default function CaseStudyApp() {
                                   <span className={`w-2 h-2 md:w-3 md:h-3 rounded-full mt-1 md:mt-0 flex-shrink-0 ${slider.color}`}></span>
                                   {slider.label}
                                 </span>
-                                <span className="text-blue-900 font-mono font-extrabold bg-blue-50 px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-blue-100 flex-shrink-0 text-sm md:text-lg">{(allocations as any)[slider.id]}%</span>
+                                <span className="text-blue-900 font-mono font-extrabold bg-blue-50 px-2 py-1 md:px-3 md:py-1.5 rounded-lg border border-blue-100 flex-shrink-0 text-sm md:text-lg">{allocations[slider.id]}%</span>
                               </div>
                               <input 
                                 type="range" min="0" max="100" 
-                                value={(allocations as any)[slider.id]}
+                                value={allocations[slider.id]}
                                 onChange={(e) => {
                                   const val = parseInt(e.target.value);
                                   setAllocations({ ...allocations, [slider.id]: val });
@@ -755,7 +742,7 @@ export default function CaseStudyApp() {
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-2 md:gap-3">
                                 {currentStepData.answers?.map((ans) => {
-                                  const isSelectedHere = (matches as any)[item.id] === ans.id;
+                                  const isSelectedHere = matches[item.id] === ans.id;
                                   const isSelectedElsewhere = Object.values(matches).includes(ans.id) && !isSelectedHere;
                                   return (
                                     <button
@@ -851,7 +838,16 @@ export default function CaseStudyApp() {
   );
 }
 
-const MetricBar = ({ label, value, color, text, bg, border }: any) => (
+interface MetricBarProps {
+  label: string;
+  value: number;
+  color: string;
+  text: string;
+  bg: string;
+  border: string;
+}
+
+const MetricBar = ({ label, value, color, text, bg, border }: MetricBarProps) => (
   <div className={`flex flex-col gap-1 p-2 md:p-3 rounded-xl border ${bg} ${border}`}>
     <div className="flex justify-between items-center text-[11px] md:text-sm font-bold">
       <span className={text}>{label}</span>
@@ -863,7 +859,14 @@ const MetricBar = ({ label, value, color, text, bg, border }: any) => (
   </div>
 );
 
-const StatPill = ({ label, delta, color, bg }: any) => {
+interface StatPillProps {
+  label: string;
+  delta: number;
+  color: string;
+  bg: string;
+}
+
+const StatPill = ({ label, delta, color, bg }: StatPillProps) => {
   if (delta === 0) return null;
   const isPos = delta > 0;
   return (
