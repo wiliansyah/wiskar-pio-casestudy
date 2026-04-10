@@ -9,11 +9,8 @@ import {
 if (typeof document !== 'undefined' && !document.getElementById('tailwind-cdn')) {
   const script = document.createElement('script');
   script.id = 'tailwind-cdn';
-  script.src = 'https://tailwindui.com/css/tailwind.css'; // Using standard Tailwind
-  const scriptTag = document.createElement('script');
-  scriptTag.id = 'tailwind-cdn';
-  scriptTag.src = 'https://cdn.tailwindcss.com';
-  document.head.appendChild(scriptTag);
+  script.src = 'https://cdn.tailwindcss.com';
+  document.head.appendChild(script);
 }
 
 // --- DYNAMIC BRANCHING SCENARIO: LIGHT TONE + DATA & NUMBERS ---
@@ -335,14 +332,21 @@ export default function CaseStudyApp() {
     const midPoints = `${getPos(50, 0)} ${getPos(50, 120)} ${getPos(50, 240)}`;
 
     return (
-      <div className="relative w-[180px] h-[180px] md:w-[200px] md:h-[200px] flex-shrink-0 animate-pulse-soft">
+      <div className="relative w-[180px] h-[180px] md:w-[200px] md:h-[200px] flex-shrink-0">
         <svg width="100%" height="100%" viewBox="0 0 200 200" className="overflow-visible">
           <polygon points={fullPoints} fill="none" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 4" />
           <polygon points={midPoints} fill="none" stroke="#cbd5e1" strokeWidth="1" strokeDasharray="4 4" />
           <line x1={center} y1={center} x2={center} y2={center - radius} stroke="#cbd5e1" />
           <line x1={center} y1={center} x2={center + radius * Math.cos(30 * Math.PI / 180)} y2={center + radius * Math.sin(30 * Math.PI / 180)} stroke="#cbd5e1" />
           <line x1={center} y1={center} x2={center - radius * Math.cos(30 * Math.PI / 180)} y2={center + radius * Math.sin(30 * Math.PI / 180)} stroke="#cbd5e1" />
-          <polygon points={points} fill="rgba(30, 58, 138, 0.25)" stroke="#1e3a8a" strokeWidth="2.5" className="transition-all duration-700 cubic-bezier(0.34, 1.56, 0.64, 1)" />
+          {/* Transition-all di sini memastikan perubahan bentuk halus saat data diupdate, tanpa pulsing terus menerus */}
+          <polygon 
+            points={points} 
+            fill="rgba(30, 58, 138, 0.25)" 
+            stroke="#1e3a8a" 
+            strokeWidth="2.5" 
+            className="transition-all duration-700 cubic-bezier(0.34, 1.56, 0.64, 1)" 
+          />
         </svg>
         <div className="absolute -top-2 left-[50%] -translate-x-1/2 text-[9px] md:text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1 rounded">KEPERCAYAAN</div>
         <div className="absolute bottom-2 -right-4 text-[9px] md:text-[10px] font-bold text-blue-700 bg-blue-50 px-1 rounded">BUDAYA</div>
@@ -469,7 +473,7 @@ export default function CaseStudyApp() {
             <p className="text-xs text-blue-200 relative z-10 font-medium">Mini Game: Uji Keputusan HR Anda</p>
           </div>
 
-          {/* Metrics Radar Chart */}
+          {/* Metrics Radar Chart (Pulsing Animasi dihapus di sini) */}
           {currentNodeId !== 'intro' && currentNodeId !== 'ending' && (
             <div className="bg-white p-5 md:p-6 rounded-3xl shadow-lg border border-slate-200 flex flex-col items-center relative overflow-hidden">
               <h3 className="text-xs md:text-sm font-bold text-slate-500 uppercase tracking-widest mb-2 md:mb-4">Grafik Kinerja Anda</h3>
@@ -780,7 +784,7 @@ export default function CaseStudyApp() {
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
         @keyframes floatSmall { 0% { transform: translateY(-50%) translateX(0px); } 50% { transform: translateY(-65%) translateX(0px); } 100% { transform: translateY(-50%) translateX(0px); } }
-        @keyframes pulseSoft { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
+        @keyframes pulseSoft { 0% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.03); opacity: 1; } 100% { transform: scale(1); opacity: 0.8; } }
         @keyframes blob { 0% { transform: translate(0px, 0px) scale(1); } 33% { transform: translate(20px, -30px) scale(1.1); } 66% { transform: translate(-10px, 10px) scale(0.9); } 100% { transform: translate(0px, 0px) scale(1); } }
         @keyframes gradientBg { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         @keyframes imageZoom { 0% { transform: scale(1.1); } 100% { transform: scale(1); } }
@@ -791,7 +795,7 @@ export default function CaseStudyApp() {
         .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
         .animate-float { animation: float 3s ease-in-out infinite; }
         .animate-float-small { animation: floatSmall 2s ease-in-out infinite; }
-        .animate-pulse-soft { animation: pulseSoft 3s ease-in-out infinite; }
+        .animate-pulse-soft { animation: pulseSoft 3.5s ease-in-out infinite; }
         .animate-blob { animation: blob 8s infinite; }
         .animation-delay-2000 { animation-delay: 2s; }
         .animate-gradient-bg { background-size: 200% 200%; animation: gradientBg 10s ease infinite; }
